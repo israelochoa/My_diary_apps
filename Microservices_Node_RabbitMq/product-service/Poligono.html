@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Zoom with Drawing Canvas, Undo and Cut Features</title>
+    <style>
+        #frame {
+            width: 500px;
+            height: 500px;
+            overflow: auto;
+            border: 1px solid black;
+            position: relative;
+        }
+        #image, #canvas {
+            position: absolute;
+        }
+        #canvas {
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <!--Herramientas de trabajo-->
+    <div id="frame">
+        <img src="51.jpeg" alt="sample image" id="image" width="500" height="500">
+        <canvas id="canvas" width="500" height="500"></canvas>
+    </div>
+    <br>
+    <button onclick="ZoomIn()">Zoom IN</button>
+    <button onclick="ZoomOut()">Zoom Out</button>
+    <button onclick="toggleDrawing()" id="btnLienzo">Lienzo</button>
+    <button onclick="undoLastStep()" id="btnUndo" disabled>Deshacer</button>
+    <button onclick="recortarImagen()" id="btnCut" disabled>Recorte</button>
+
+    <script>
+        let image = document.getElementById('image');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d', { willReadFrequently: true });
+        let drawing = false;
+        let zoomLevel = 1;
+        let points = [];
+        let minZoomLevel = 1;
+        let maxZoomLevel = 3;
+        let polygonClosed = false;
+//Control ZoomIn +
+        function ZoomIn() {
+            if (zoomLevel < maxZoomLevel) {
+                zoomLevel += 0.1;
+                scaleImageAndCanvas(zoomLevel);
+                console.log("---------------function ZoomIn() . Coordinates:----------------");
+                console.log(points);
+                console.log("function ZoomIn() :Image size with zoom:", image.width, "x", image.height);
+            }
+            console.log(" function ZoomIn() : var zoomLevel");
+            console.log(zoomLevel)
+        }
+//Control Zoom -
+        function ZoomOut() {
+            if (zoomLevel > minZoomLevel) {
+                zoomLevel -= 0.1;
+                scaleImageAndCanvas(zoomLevel);
+                console.log("---------------function ZoomOut(). Coordinates:---------------");
+                console.log(points);
+                console.log("function ZoomOut():Image size with zoom:", image.width, "x", image.height);
+            }
+            console.log(" function ZoomOut(): var zoomLevel");
+            console.log(zoomLevel)
+        }
+//Control button Lienzo
+        function toggleDrawing() {
+            console.log(" --------------- function toggleDrawing() ---------------");
+            drawing = !drawing;
+            
+            console.log(" function toggleDrawing(): var zoomLevel");
+            console.log(zoomLevel)
+            if (drawing && !polygonClosed) {
+                console.log("  function toggleDrawing(): if (drawing && !polygonClosed)  ");
+                console.log("  function toggleDrawing():call addPoint() ");
+                canvas.addEventListener('click', addPoint);
+            } else {
+                console.log("  function toggleDrawing(): else (drawing && !polygonClosed)  ");
+                console.log("  function toggleDrawing():call addPoint() ");
+                canvas.removeEventListener('click', addPoint);
+            }
+        }
+//Control addPoint with zoom or without
+        function addPoint(e) {
+            let rect = canvas.getBoundingClientRect();
+            //let x = (e.clientX - rect.left) / zoomLevel;
+            //let y = (e.clientY - rect.top) / zoomLevel;
+            let x = (e.clientX - rect.left) / zoomLevel;
+            let y = (e.clientY - rect.top) / zoomLevel;
+            console.log("---------------function addPoint(e)---------------:");
+            console.log("x = (e.clientX - rect.left) / zoomLevel;");
+            console.log(x);
+            console.log("y = (e.clientY - rect.top) / zoomLevel;");
+            console.log(y);
+            console.log("Image size with zoom:", image.width, "x", image.height);
+            points.push({ x: x, y: y });
+            document.getElementById('btnUndo').disabled = (points==0);
+            console.log("function addPoint(e),call drawPolygon():");
+            console.log("function addPoint(e),call checkPolygonClosure():");
+            drawPolygon();
+            checkPolygonClosure();
+        }
+//Verifica que el poligono no este cerrado, para continuar con la seccion de puntos
+        function checkPolygonClosure() {
+            console.log(" ---------------function checkPolygonClosure(): var points[i]---------------");
+            console.log(points)
+            if (points.length > 1 && isCloseToStart(points[0], points[points.length - 1])) {
+                polygonClosed = true;
+                document.getElementById('btnCut').disabled = false;
+                document.getElementById('btnLienzo').disabled = true;
+                document.getElementById('btnUndo').disabled = false;
+                
+            }else if(isCloseToStart(points[0], points[points.length - 1])){
+                drawing=false;
+                polygonClosed = false;
+            }
+        }
+            
+//Verifica que el poligono no este cerrado, para continuar con la seccion de puntos
+        function isCloseToStart(start, end) {
+            let threshold = 4;
+            return Math.abs(start.x - end.x) < threshold && Math.abs(start.y - end.y) < threshold;
+        }
+//Este funcion une los puntos - Aqui se produce el Dibujo
+        function drawPolygon() {
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            console.log("--------------- function drawPolygon():---------------");
+            
+            console.log(" function drawPolygon(): var zoomLevel");
+            console.log(zoomLevel)
+            if (points.length > 1) {
+                console.log("  function drawPolygon(): if (points.length > 1)");
+                console.log(" function drawPolygon(): x=points[0].x * zoomLevel");
+                console.log(points[0].x * zoomLevel);
+                console.log(" function drawPolygon(): y = points[0].y * zoomLevel");
+                console.log(points[0].y * zoomLevel);
+                console.log(" function drawPolygon(): var points[i]");
+                console.log(points)
+                console.log(points[0].y );
+                ctx.beginPath();
+                ctx.moveTo(points[0].x * zoomLevel, points[0].y * zoomLevel);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points[i].x * zoomLevel, points[i].y * zoomLevel);
+                }
+                if (polygonClosed) {
+                    ctx.closePath();
+                }
+                ctx.stroke();
+            }
+        }
+//Control Button "Deshacer". Permite deshacer un paso del dibujo
+        function undoLastStep() {
+            if (points.length > 0) {
+                points.pop();
+             
+                document.getElementById('btnCut').disabled = true;
+                document.getElementById('btnLienzo').disabled = false;
+                document.getElementById('btnUndo').disabled = points.length === 0;
+                drawPolygon();
+                
+            
+            console.log("--------------function undoLastStep():------------------")
+            console.log(points);
+        }
+    }
+        let originalImage;
+//Esta funcion presenta la imagen mas grande
+        function scaleImageAndCanvas(zoom) {
+            
+            let newWidth = 500 * zoom;
+            let newHeight = 500 * zoom;
+            console.log(" ---------------function scaleImageAndCanvas(zoom):let newWidth = 500 * zoom - let newHeight = 500 * zoom ---------------");
+            console.log(" function scaleImageAndCanvas(zoom): var zoomLevel");
+            console.log(zoomLevel)
+            console.log("   image.width=newWidth ");
+            console.log(   image.width);
+            console.log("image.height = newHeight");
+            console.log(image.height);
+            console.log("canvas.width = newWidth");
+            console.log(canvas.width);
+            console.log( "canvas.height = newHeight");
+            console.log( canvas.height);
+                
+            image.width = newWidth;
+            image.height = newHeight;
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            console.log(" function scaleImageAndCanvas(zoom): call updateLineWidth()");
+            updateLineWidth();
+            console.log(" function scaleImageAndCanvas(zoom): call drawPolygon()");
+            drawPolygon();
+        }
+  
+
+        function isPointInPolygon(x, y) {
+            let inside = false;
+            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+                let xi = points[i].x, yi = points[i].y;
+                let xj = points[j].x, yj = points[j].y;
+
+                let intersect = ((yi > y) != (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        function updateLineWidth() {
+            console.log("---------------function updateLineWidth():---------------")
+            ctx.lineWidth = 5;
+        }
+
+        function adjustInteraction() {
+            console.log("---------------function function adjustInteraction():---------------")
+            if (polygonClosed) {
+                canvas.removeEventListener('click', addPoint);
+                document.getElementById('btnCut').disabled = false;
+                document.getElementById('btnLienzo').disabled = true;
+            } else {
+                
+                document.getElementById('btnCut').disabled = true;
+                document.getElementById('btnLienzo').disabled = false;
+            }
+        }
+
+        canvas.addEventListener('click', adjustInteraction);
+
+        function recortarImagen() {
+            // Coordenadas de los puntos que definen el polígono de recorte
+
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Dibujar la imagen original en el canvas
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            // Cambiar la operación de composición global a 'destination-in' para que solo se muestren las partes de la imagen original que se superponen con el próximo dibujo
+            ctx.globalCompositeOperation = 'destination-in';
+
+            // Dibujar el polígono de recorte
+            ctx.beginPath();
+            ctx.moveTo(points[0].x* zoomLevel, points[0].y* zoomLevel);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x* zoomLevel, points[i].y* zoomLevel);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Cambiar la operación de composición global a 'destination-over' para que los próximos dibujos se superpongan a los existentes
+            ctx.globalCompositeOperation = 'destination-over';
+
+            // Dibujar un rectángulo negro del mismo tamaño que la imagen original
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            let enlace = document.createElement('a');
+
+            // Obtener la imagen del canvas
+            let imagen = canvas.toDataURL('image/png');
+
+            // Asignar la imagen como href del enlace
+            enlace.href = imagen;
+
+            // Asignar un nombre al archivo descargado
+            enlace.download = 'mi-imagen.png';
+
+            // Simular un clic en el enlace para iniciar la descarga
+            enlace.click();
+   
+        }
+        
+        
+    </script>
+</body>
+</html>

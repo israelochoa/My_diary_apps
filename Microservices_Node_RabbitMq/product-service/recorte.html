@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recorte Poligonal de Imagen</title>
+    <!-- Incluir la biblioteca html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- Imagen que se recortará -->
+    <img id="imagen" src="1.jpeg" alt="Imagen para recortar" width="500" height="500" onload="setContenedorSize()">
+    
+    <!-- Botón para realizar el recorte poligonal -->
+    <button onclick="recortarImagen()">Recortar Imagen</button>
+    
+    <script>
+        function setContenedorSize() {
+            // No es necesario obtener el tamaño del contenedor si estamos utilizando un canvas para el recorte
+        }
+
+        function recortarImagen() {
+            // Coordenadas de los puntos que definen el polígono de recorte
+            let puntos = [
+                {x: 243.07692307692304, y: 166.92307692307688},
+                {x: 249.99999999999994, y: 178.46153846153842},
+                {x: 249.99999999999994, y: 191.5384615384615}, 
+                {x: 253.84615384615378, y: 199.2307692307692}, 
+                {x: 259.23076923076917, y: 202.30769230769226}, 
+                {x: 262.30769230769226, y: 222.30769230769226}, 
+                {x: 268.4615384615384, y: 229.99999999999994}, 
+                {x: 273.8461538461538, y: 238.46153846153842}, 
+                {x: 275.3846153846153, y: 254.61538461538456}, 
+                {x: 276.92307692307685, y: 276.92307692307685},
+                {x: 276.1538461538461, y: 303.07692307692304},
+                {x: 264.6153846153846, y: 320.7692307692307},
+                {x: 243.84615384615378, y: 337.6923076923076},
+                {x: 233.07692307692304, y: 347.6923076923076},
+                {x: 225.38461538461533, y: 353.076923076923},
+                {x: 223.07692307692304, y: 355.3846153846153},
+                {x: 217.69230769230765, y: 359.23076923076917},
+                {x: 200.76923076923072, y: 355.3846153846153},
+                {x: 181.5384615384615, y: 339.23076923076917},
+                {x: 169.99999999999997, y: 326.1538461538461},
+                {x: 161.53846153846152, y: 314.6153846153845},
+                {x: 152.30769230769226, y: 299.23076923076917},
+                {x: 152.30769230769226, y: 282.30769230769226},
+                {x: 146.15384615384613, y: 270.7692307692307},
+                {x: 143.07692307692304, y: 256.92307692307685},
+                {x: 143.8461538461538, y: 232.30769230769226},
+                {x: 148.46153846153842, y: 220.76923076923072},
+                {x: 153.8461538461538, y: 210.76923076923072},
+                {x: 160.76923076923075, y: 200.76923076923072},
+                {x: 166.92307692307688, y: 177.69230769230765},
+                {x: 177.69230769230765, y: 170.76923076923075},
+                {x: 189.99999999999997, y: 163.8461538461538},
+                {x: 199.99999999999997, y: 162.30769230769226},
+                {x: 208.46153846153842, y: 162.30769230769226},
+                {x: 243.84615384615378, y: 166.92307692307688}
+            ];
+
+
+
+            // Obtener la referencia a la imagen
+            let imagen = document.getElementById('imagen');
+
+            // Crear un canvas del mismo tamaño que la imagen original
+            let canvas = document.createElement('canvas');
+            canvas.width = 500;
+            canvas.height = 500;
+            let ctx = canvas.getContext('2d');
+
+            // Dibujar la imagen original en el canvas
+            ctx.drawImage(imagen, 0, 0, canvas.width, canvas.height);
+
+            // Cambiar la operación de composición global a 'destination-in' para que solo se muestren las partes de la imagen original que se superponen con el próximo dibujo
+            ctx.globalCompositeOperation = 'destination-in';
+
+            // Dibujar el polígono de recorte
+            ctx.beginPath();
+            ctx.moveTo(puntos[0].x, puntos[0].y);
+            for (let i = 1; i < puntos.length; i++) {
+                ctx.lineTo(puntos[i].x, puntos[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Cambiar la operación de composición global a 'destination-over' para que los próximos dibujos se superpongan a los existentes
+            ctx.globalCompositeOperation = 'destination-over';
+
+            // Dibujar un rectángulo negro del mismo tamaño que la imagen original
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Convertir el canvas en una imagen
+            let imagenRecortada = new Image();
+            imagenRecortada.src = canvas.toDataURL();
+
+            // Mostrar la imagen recortada en la página
+            document.body.appendChild(imagenRecortada);
+        }
+    </script>
+</body>
+</html>
