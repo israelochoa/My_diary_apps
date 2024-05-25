@@ -6,8 +6,8 @@
     <title>Image Zoom with Drawing Canvas, Undo and Cut Features</title>
     <style>
         #frame {
-            width: 500px;
-            height: 500px;
+            width: auto;
+            height: auto;
             overflow: auto;
             border: 1px solid black;
             position: relative;
@@ -23,7 +23,7 @@
 <body>
     <!--Herramientas de trabajo-->
     <div id="frame">
-        <img src="51.jpeg" alt="sample image" id="image" width="500" height="500">
+        
         <canvas id="canvas" width="500" height="500"></canvas>
     </div>
     <br>
@@ -32,9 +32,10 @@
     <button onclick="toggleDrawing()" id="btnLienzo">Lienzo</button>
     <button onclick="undoLastStep()" id="btnUndo" disabled>Deshacer</button>
     <button onclick="recortarImagen()" id="btnCut" disabled>Recorte</button>
+    <button id="btnDownload" onclick="descargarImagen()" disabled>Descargar</button>
 
     <script>
-        let image = document.getElementById('image');
+        
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d', { willReadFrequently: true });
         let drawing = false;
@@ -43,11 +44,46 @@
         let minZoomLevel = 1;
         let maxZoomLevel = 3;
         let polygonClosed = false;
+
+        var imagePath='51.jpeg';
+        var image=new Image();
+        image.src=imagePath;
+        let imageWidthOriginal=0;
+
+        let imageHeightOriginal=0;
+
+        let imageWidth=0;
+
+        let imageHeight= 0;
+
+
+        
+        
+        image.onload=function(){
+            //Obtener dimensiones de la imagen
+            imageWidthOriginal=this.width;
+            imageHeightOriginal=this.height;
+            imageWidth=imageWidthOriginal/3;
+            imageHeight=imageHeightOriginal/3;
+            console.log('Dimensiones de la imagen: Ancho=',imageWidth,'px,Alto =',imageHeight,'px');
+            //Establecer dimesiones del lienzo
+            var canvas = document.getElementById('canvas');
+            canvas.width=imageWidth;
+            canvas.height=imageHeight;
+//Dibujar la imagen en el lienzo
+            var ctx=canvas.getContext("2d");
+            ctx.drawImage(image,0,0,imageWidth,imageHeight);
+            //Establecer dimensiones del contenedor 'frame'
+            var frame=document.getElementById('frame');
+            frame.style.width=imageWidth+"px";
+            frame.style.height=imageHeight+"px";
+        }
 //Control ZoomIn +
         function ZoomIn() {
             if (zoomLevel < maxZoomLevel) {
                 zoomLevel += 0.1;
                 scaleImageAndCanvas(zoomLevel);
+                //adjustFrameSize();
                 console.log("---------------function ZoomIn() . Coordinates:----------------");
                 console.log(points);
                 console.log("function ZoomIn() :Image size with zoom:", image.width, "x", image.height);
@@ -60,6 +96,7 @@
             if (zoomLevel > minZoomLevel) {
                 zoomLevel -= 0.1;
                 scaleImageAndCanvas(zoomLevel);
+                //adjustFrameSize();  
                 console.log("---------------function ZoomOut(). Coordinates:---------------");
                 console.log(points);
                 console.log("function ZoomOut():Image size with zoom:", image.width, "x", image.height);
@@ -67,6 +104,7 @@
             console.log(" function ZoomOut(): var zoomLevel");
             console.log(zoomLevel)
         }
+
 //Control button Lienzo
         function toggleDrawing() {
             console.log(" --------------- function toggleDrawing() ---------------");
@@ -127,21 +165,7 @@
         }
 //Este funcion une los puntos - Aqui se produce el Dibujo
         function drawPolygon() {
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            console.log("--------------- function drawPolygon():---------------");
-            
-            console.log(" function drawPolygon(): var zoomLevel");
-            console.log(zoomLevel)
             if (points.length > 1) {
-                console.log("  function drawPolygon(): if (points.length > 1)");
-                console.log(" function drawPolygon(): x=points[0].x * zoomLevel");
-                console.log(points[0].x * zoomLevel);
-                console.log(" function drawPolygon(): y = points[0].y * zoomLevel");
-                console.log(points[0].y * zoomLevel);
-                console.log(" function drawPolygon(): var points[i]");
-                console.log(points)
-                console.log(points[0].y );
                 ctx.beginPath();
                 ctx.moveTo(points[0].x * zoomLevel, points[0].y * zoomLevel);
                 for (let i = 1; i < points.length; i++) {
@@ -169,32 +193,7 @@
         }
     }
         let originalImage;
-//Esta funcion presenta la imagen mas grande
-        function scaleImageAndCanvas(zoom) {
-            
-            let newWidth = 500 * zoom;
-            let newHeight = 500 * zoom;
-            console.log(" ---------------function scaleImageAndCanvas(zoom):let newWidth = 500 * zoom - let newHeight = 500 * zoom ---------------");
-            console.log(" function scaleImageAndCanvas(zoom): var zoomLevel");
-            console.log(zoomLevel)
-            console.log("   image.width=newWidth ");
-            console.log(   image.width);
-            console.log("image.height = newHeight");
-            console.log(image.height);
-            console.log("canvas.width = newWidth");
-            console.log(canvas.width);
-            console.log( "canvas.height = newHeight");
-            console.log( canvas.height);
-                
-            image.width = newWidth;
-            image.height = newHeight;
-            canvas.width = newWidth;
-            canvas.height = newHeight;
-            console.log(" function scaleImageAndCanvas(zoom): call updateLineWidth()");
-            updateLineWidth();
-            console.log(" function scaleImageAndCanvas(zoom): call drawPolygon()");
-            drawPolygon();
-        }
+
   
 
         function isPointInPolygon(x, y) {
@@ -212,9 +211,24 @@
 
         function updateLineWidth() {
             console.log("---------------function updateLineWidth():---------------")
-            ctx.lineWidth = 5;
+            // Calculate line width based on the current zoom level
+            ctx.lineWidth = 1.5* zoomLevel;
         }
 
+        //Esta funcion presenta la imagen mas grande
+        function scaleImageAndCanvas(zoom) {
+            let newWidth = imageWidth * zoom;
+            let newHeight = imageHeight * zoom;
+            image.width = newWidth;
+            image.height = newHeight;
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            updateLineWidth();
+            // Dibuja la imagen en el lienzo con las nuevas dimensiones
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+            drawPolygon();
+            
+        }
         function adjustInteraction() {
             console.log("---------------function function adjustInteraction():---------------")
             if (polygonClosed) {
@@ -256,20 +270,26 @@
             // Dibujar un rectángulo negro del mismo tamaño que la imagen original
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('btnDownload').disabled=false;
+               
+        }
+
+        function descargarImagen(){
+            // Crear un canvas temporal con las dimensiones originales de la imagen
+            let canvasTemporal = document.createElement('canvas');
+            canvasTemporal.width = imageWidthOriginal;
+            canvasTemporal.height = imageHeightOriginal;
+            let ctxTemporal = canvasTemporal.getContext('2d');
+
+            // Dibujar la imagen recortada en el canvas temporal con las dimensiones originales
+            ctxTemporal.drawImage(canvas, 0, 0, imageWidthOriginal, imageHeightOriginal);
+
+            // Crear el enlace de descarga con la imagen del canvas temporal
             let enlace = document.createElement('a');
-
-            // Obtener la imagen del canvas
-            let imagen = canvas.toDataURL('image/png');
-
-            // Asignar la imagen como href del enlace
+            let imagen = canvasTemporal.toDataURL('image/png');
             enlace.href = imagen;
-
-            // Asignar un nombre al archivo descargado
             enlace.download = 'mi-imagen.png';
-
-            // Simular un clic en el enlace para iniciar la descarga
             enlace.click();
-   
         }
         
         
